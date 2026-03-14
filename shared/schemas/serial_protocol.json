@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Wall-A Serial Protocol",
+  "description": "JSON messages between Pi and Arduino over USB serial at 115200 baud",
+  "oneOf": [
+    {
+      "title": "Motor Command (Pi → Arduino)",
+      "type": "object",
+      "properties": {
+        "type": { "const": "motor" },
+        "left": { "type": "integer", "minimum": -255, "maximum": 255 },
+        "right": { "type": "integer", "minimum": -255, "maximum": 255 }
+      },
+      "required": ["type", "left", "right"]
+    },
+    {
+      "title": "Sensor Data (Arduino → Pi)",
+      "type": "object",
+      "properties": {
+        "type": { "const": "sensors" },
+        "motors": {
+          "type": "object",
+          "properties": {
+            "left_speed": { "type": "integer" },
+            "right_speed": { "type": "integer" }
+          }
+        },
+        "battery_voltage": { "type": "number" },
+        "bump_sensors": {
+          "type": "object",
+          "properties": {
+            "front_left": { "type": "boolean" },
+            "front_right": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["type"]
+    },
+    {
+      "title": "Status Message (Arduino → Pi)",
+      "type": "object",
+      "properties": {
+        "type": { "const": "status" },
+        "message": { "type": "string" }
+      },
+      "required": ["type", "message"]
+    }
+  ]
+}
