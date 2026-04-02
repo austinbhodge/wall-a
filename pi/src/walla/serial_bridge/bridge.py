@@ -20,6 +20,7 @@ class SerialBridge:
     def connect(self):
         log.info("Connecting to Arduino on %s @ %d baud", self.port, self.baud)
         self._ser = serial.Serial(self.port, self.baud, timeout=1)
+        self._ser.reset_input_buffer()
 
     def close(self):
         if self._ser and self._ser.is_open:

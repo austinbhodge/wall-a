@@ -1,29 +1,28 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <AFMotor.h>
 
-// Motor shield pins (adjust for your specific motor shield)
-const int MOTOR_LEFT_PWM = 5;
-const int MOTOR_LEFT_DIR = 4;
-const int MOTOR_RIGHT_PWM = 6;
-const int MOTOR_RIGHT_DIR = 7;
+// Motor Shield v1 (L293D) — motors on M3 and M4
+AF_DCMotor motorLeft(3);
+AF_DCMotor motorRight(4);
 
 // Serial JSON buffer
 JsonDocument doc;
 
-void setupMotors() {
-    pinMode(MOTOR_LEFT_PWM, OUTPUT);
-    pinMode(MOTOR_LEFT_DIR, OUTPUT);
-    pinMode(MOTOR_RIGHT_PWM, OUTPUT);
-    pinMode(MOTOR_RIGHT_DIR, OUTPUT);
-}
-
 void setMotors(int leftSpeed, int rightSpeed) {
     // leftSpeed/rightSpeed: -255 to 255
-    digitalWrite(MOTOR_LEFT_DIR, leftSpeed >= 0 ? HIGH : LOW);
-    analogWrite(MOTOR_LEFT_PWM, abs(constrain(leftSpeed, -255, 255)));
+    leftSpeed = constrain(leftSpeed, -255, 255);
+    rightSpeed = constrain(rightSpeed, -255, 255);
 
-    digitalWrite(MOTOR_RIGHT_DIR, rightSpeed >= 0 ? HIGH : LOW);
-    analogWrite(MOTOR_RIGHT_PWM, abs(constrain(rightSpeed, -255, 255)));
+    motorLeft.setSpeed(abs(leftSpeed));
+    if (leftSpeed > 0) motorLeft.run(FORWARD);
+    else if (leftSpeed < 0) motorLeft.run(BACKWARD);
+    else motorLeft.run(RELEASE);
+
+    motorRight.setSpeed(abs(rightSpeed));
+    if (rightSpeed > 0) motorRight.run(FORWARD);
+    else if (rightSpeed < 0) motorRight.run(BACKWARD);
+    else motorRight.run(RELEASE);
 }
 
 void sendSensorData() {
@@ -58,12 +57,14 @@ void handleCommand() {
 
 void setup() {
     Serial.begin(115200);
-    setupMotors();
+
+    // Stop all motors
+    setMotors(0, 0);
 
     // Announce ready
     doc.clear();
     doc["type"] = "status";
-    doc["message"] = "Wall-A firmware ready";
+    doc["message"] = "Wall-A firmware ready (Motor Shield v1, M3+M4)";
     serializeJson(doc, Serial);
     Serial.println();
 }
