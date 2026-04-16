@@ -39,14 +39,19 @@ def main():
     gamepad = Gamepad()
     navigator = Navigator()
 
-    # Connect hardware
+    # Connect hardware — every device is optional; missing ones reconnect in the tick loop.
     log.info("Connecting to Arduino...")
-    bridge.connect()
-    time.sleep(2)  # Arduino resets on serial connect
-    log.info("Arduino connected")
+    if bridge.connect():
+        time.sleep(2)  # Arduino resets on serial connect
+        log.info("Arduino connected")
+    else:
+        log.warning("Arduino not available — will retry in background")
 
     log.info("Opening camera...")
-    camera.open()
+    if camera.open():
+        log.info("Camera ready")
+    else:
+        log.warning("Camera not available — will retry in background")
 
     log.info("Initializing controller...")
     controller_ok = gamepad.init()
@@ -65,12 +70,13 @@ def main():
     sensor_thread.start()
     camera_thread.start()
 
-    # Wait for first sensor data
-    log.info("Waiting for sensor data...")
-    for _ in range(20):
-        if state.arduino_connected:
-            break
-        time.sleep(0.1)
+    # Wait for first sensor data (only if the Arduino is actually present)
+    if bridge.connected:
+        log.info("Waiting for sensor data...")
+        for _ in range(20):
+            if state.arduino_connected:
+                break
+            time.sleep(0.1)
 
     log.info("Wall-A is READY — mode: %s", state.mode)
     log.info("  PS button = toggle mode | Circle = emergency stop | Triangle = recalibrate floor")
@@ -82,14 +88,17 @@ def main():
         while True:
             tick_start = time.monotonic()
 
-            # Try reconnecting controller every 2 seconds if disconnected
-            if not gamepad.connected:
-                now = time.monotonic()
-                if now - last_reconnect_time > 2.0:
-                    last_reconnect_time = now
-                    if gamepad.try_reconnect():
-                        state.controller_connected = True
-                        log.info("Controller connected!")
+            # Try reconnecting any missing hardware every 2 seconds.
+            now = time.monotonic()
+            if now - last_reconnect_time > 2.0:
+                last_reconnect_time = now
+                if gamepad.try_reconnect():
+                    state.controller_connected = True
+                    log.info("Controller connected!")
+                if bridge.try_reconnect():
+                    log.info("Arduino connected!")
+                if camera.try_reconnect():
+                    log.info("Camera connected!")
 
             gamepad.update()
 
@@ -143,10 +152,11 @@ def main():
             if now - last_status_time > 10.0:
                 left, right = gamepad.get_tank_drive()
                 log.info(
-                    "Status — mode=%s battery=%.1fV cam=%s ctrl=%s stick=(%d,%d)",
+                    "Status — mode=%s battery=%.1fV arduino=%s cam=%s ctrl=%s stick=(%d,%d)",
                     snap["mode"],
                     snap["battery_voltage"],
-                    snap["camera_active"],
+                    bridge.connected,
+                    camera.connected,
                     gamepad.connected,
                     left,
                     right,

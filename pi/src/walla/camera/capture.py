@@ -14,15 +14,31 @@ class Camera:
         self.height = height
         self._cam: Picamera2 | None = None
 
-    def open(self):
+    def open(self) -> bool:
         log.info("Opening Pi Camera %d (%dx%d)", self.device, self.width, self.height)
-        self._cam = Picamera2(self.device)
-        # Picamera2's "RGB888" format produces byte-order BGR arrays — cv2-compatible.
-        config = self._cam.create_video_configuration(
-            main={"size": (self.width, self.height), "format": "RGB888"}
-        )
-        self._cam.configure(config)
-        self._cam.start()
+        try:
+            self._cam = Picamera2(self.device)
+            # Picamera2's "RGB888" format produces byte-order BGR arrays — cv2-compatible.
+            config = self._cam.create_video_configuration(
+                main={"size": (self.width, self.height), "format": "RGB888"}
+            )
+            self._cam.configure(config)
+            self._cam.start()
+            return True
+        except Exception as e:
+            log.warning("Camera unavailable: %s", e)
+            self._cam = None
+            return False
+
+    @property
+    def connected(self) -> bool:
+        return self._cam is not None
+
+    def try_reconnect(self) -> bool:
+        """Attempt to (re)open the camera. Returns True only if newly connected."""
+        if self.connected:
+            return False
+        return self.open()
 
     def read_frame(self):
         """Read a single frame. Returns (success, BGR ndarray)."""
@@ -31,11 +47,18 @@ class Camera:
         try:
             return True, self._cam.capture_array("main")
         except Exception:
-            log.exception("capture_array failed")
+            log.exception("capture_array failed — dropping camera")
+            self._drop()
             return False, None
 
+    def _drop(self):
+        try:
+            if self._cam:
+                self._cam.stop()
+                self._cam.close()
+        except Exception:
+            pass
+        self._cam = None
+
     def close(self):
-        if self._cam:
-            self._cam.stop()
-            self._cam.close()
-            self._cam = None
+        self._drop()

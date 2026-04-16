@@ -17,20 +17,48 @@ class SerialBridge:
         self.baud = baud
         self._ser: serial.Serial | None = None
 
-    def connect(self):
+    def connect(self) -> bool:
         log.info("Connecting to Arduino on %s @ %d baud", self.port, self.baud)
-        self._ser = serial.Serial(self.port, self.baud, timeout=1)
-        self._ser.reset_input_buffer()
+        try:
+            self._ser = serial.Serial(self.port, self.baud, timeout=1)
+            self._ser.reset_input_buffer()
+            return True
+        except (serial.SerialException, OSError) as e:
+            log.warning("Arduino unavailable on %s: %s", self.port, e)
+            self._ser = None
+            return False
+
+    @property
+    def connected(self) -> bool:
+        return self._ser is not None and self._ser.is_open
+
+    def try_reconnect(self) -> bool:
+        """Attempt to (re)connect. Returns True only if newly connected."""
+        if self.connected:
+            return False
+        return self.connect()
+
+    def _drop(self):
+        try:
+            if self._ser:
+                self._ser.close()
+        except Exception:
+            pass
+        self._ser = None
 
     def close(self):
-        if self._ser and self._ser.is_open:
-            self._ser.close()
+        self._drop()
 
     def read_sensors(self) -> dict | None:
         """Read one JSON line from Arduino."""
         if not self._ser:
             return None
-        line = self._ser.readline().decode("utf-8", errors="replace").strip()
+        try:
+            line = self._ser.readline().decode("utf-8", errors="replace").strip()
+        except (serial.SerialException, OSError) as e:
+            log.warning("Arduino disconnected during read: %s", e)
+            self._drop()
+            return None
         if not line:
             return None
         try:
@@ -44,7 +72,11 @@ class SerialBridge:
         if not self._ser:
             return
         msg = json.dumps(command) + "\n"
-        self._ser.write(msg.encode("utf-8"))
+        try:
+            self._ser.write(msg.encode("utf-8"))
+        except (serial.SerialException, OSError) as e:
+            log.warning("Arduino disconnected during write: %s", e)
+            self._drop()
 
     def set_motors(self, left: int, right: int):
         """Convenience: send motor command."""

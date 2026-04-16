@@ -19,6 +19,10 @@ def sensor_loop(
     """Continuously read sensor data from Arduino (~10Hz)."""
     log.info("Sensor thread started")
     while not stop.is_set():
+        if not bridge.connected:
+            # Avoid spinning when the Arduino is unplugged; main loop handles reconnect.
+            time.sleep(0.1)
+            continue
         try:
             data = bridge.read_sensors()
             if data and data.get("type") == "sensors":
