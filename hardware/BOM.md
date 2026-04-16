@@ -18,7 +18,7 @@
 | Raspberry Pi 5 | 1 | Headless Ubuntu 24.04 Server |
 | Arduino Uno | 1 | Low-level motor/sensor control |
 | Motor Shield (Arduino) | 1 | Drives Tamiya twin motors |
-| Logitech C270 HD Webcam | 1 | 720p, USB |
+| Raspberry Pi Camera Module 3 | 1 | imx708 sensor, 4608×2592, CSI ribbon to CAM/DISP 0 |
 | USB Microphone | 1 | Speech input |
 | Small Speaker | 1 | TTS output |
 | USB Power Bank | 1 | Powers Pi 5 via USB-C |

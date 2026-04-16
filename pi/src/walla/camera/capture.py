@@ -1,8 +1,8 @@
-"""Camera capture and streaming to GPU server."""
+"""Camera capture for the Pi Camera Module 3 via libcamera (Picamera2)."""
 
 import logging
 
-import cv2
+from picamera2 import Picamera2
 
 log = logging.getLogger(__name__)
 
@@ -12,22 +12,30 @@ class Camera:
         self.device = device
         self.width = width
         self.height = height
-        self._cap: cv2.VideoCapture | None = None
+        self._cam: Picamera2 | None = None
 
     def open(self):
-        log.info("Opening camera device %d (%dx%d)", self.device, self.width, self.height)
-        self._cap = cv2.VideoCapture(self.device, cv2.CAP_V4L2)
-        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-        if not self._cap.isOpened():
-            log.error("Failed to open camera device %d", self.device)
+        log.info("Opening Pi Camera %d (%dx%d)", self.device, self.width, self.height)
+        self._cam = Picamera2(self.device)
+        # Picamera2's "RGB888" format produces byte-order BGR arrays — cv2-compatible.
+        config = self._cam.create_video_configuration(
+            main={"size": (self.width, self.height), "format": "RGB888"}
+        )
+        self._cam.configure(config)
+        self._cam.start()
 
     def read_frame(self):
-        """Read a single frame. Returns (success, frame)."""
-        if not self._cap:
+        """Read a single frame. Returns (success, BGR ndarray)."""
+        if not self._cam:
             return False, None
-        return self._cap.read()
+        try:
+            return True, self._cam.capture_array("main")
+        except Exception:
+            log.exception("capture_array failed")
+            return False, None
 
     def close(self):
-        if self._cap:
-            self._cap.release()
+        if self._cam:
+            self._cam.stop()
+            self._cam.close()
+            self._cam = None

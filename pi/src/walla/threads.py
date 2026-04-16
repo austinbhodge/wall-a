@@ -36,7 +36,7 @@ def camera_loop(
     state: RobotState,
     stop: threading.Event,
 ):
-    """Continuously capture frames from webcam."""
+    """Continuously capture frames from camera."""
     log.info("Camera thread started")
     while not stop.is_set():
         try:

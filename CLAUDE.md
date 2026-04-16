@@ -114,7 +114,7 @@ A small tracked robot designed for prototyping, using 22mm skateboard bearings f
 | Raspberry Pi 5 | Main compute on robot. Headless Ubuntu 24.04 Server |
 | Arduino Uno | Low-level motor/sensor control |
 | Motor Shield (on Arduino) | Drives the Tamiya twin motors |
-| Logitech C270 HD Webcam | 720p widescreen, USB — mounted on chassis |
+| Raspberry Pi Camera Module 3 | imx708 sensor, 4608×2592, CSI ribbon to CAM/DISP 0 — mounted on chassis |
 | USB Microphone | For speech input, audio level monitoring |
 | Small Speaker | For TTS output (Piper TTS on Pi or streamed from GPU) |
 | USB Power Bank | Powers the Pi 5 via USB-C |
@@ -231,7 +231,7 @@ The base chassis (Thingiverse thing:2753227) was designed by its creator for cla
 - [x] Pi 5 set up (SSH, Pi Connect)
 - [ ] Serial communication Pi ↔ Arduino
 - [ ] Basic motor control from Pi (forward, back, turn)
-- [ ] Webcam streaming Pi → GPU server
+- [ ] Camera streaming Pi → GPU server
 
 ### Phase 2 — Perception
 - [ ] YOLO object detection on GPU server
