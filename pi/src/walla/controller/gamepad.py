@@ -93,6 +93,12 @@ class Gamepad:
             return 0.0
         return max(-1.0, min(1.0, val))
 
+    def try_reconnect(self) -> bool:
+        """Attempt to find and connect to the controller. Returns True if newly connected."""
+        if self._dev is not None:
+            return False
+        return self.init()
+
     def update(self):
         """Read all pending events from the device. Call each frame."""
         if not self._dev:
@@ -135,8 +141,8 @@ class Gamepad:
         if not self.connected:
             return 0, 0
 
-        throttle = -self.axis(ABS_LEFT_Y)  # negate: stick up = negative
-        turn = self.axis(ABS_LEFT_X)
+        throttle = -self.axis(ABS_LEFT_X)  # was Y — axes rotated 90°
+        turn = self.axis(ABS_LEFT_Y)
 
         left = throttle + turn
         right = throttle - turn

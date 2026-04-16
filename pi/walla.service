@@ -1,0 +1,14 @@
+[Unit]
+Description=Wall-A Robot
+After=multi-user.target
+
+[Service]
+Type=simple
+User=austin
+Environment=PATH=/home/austin/.local/bin:/usr/bin:/bin
+ExecStart=/home/austin/.local/bin/walla
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

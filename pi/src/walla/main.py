@@ -52,8 +52,7 @@ def main():
     controller_ok = gamepad.init()
     state.controller_connected = controller_ok
     if not controller_ok:
-        log.warning("No controller — starting in AUTO mode")
-        state.mode = "AUTO"
+        log.warning("No controller found — waiting for connection in MANUAL mode")
 
     # Start background threads
     stop = threading.Event()
@@ -77,10 +76,20 @@ def main():
     log.info("  PS button = toggle mode | Circle = emergency stop | Triangle = recalibrate floor")
 
     last_status_time = time.monotonic()
+    last_reconnect_time = time.monotonic()
 
     try:
         while True:
             tick_start = time.monotonic()
+
+            # Try reconnecting controller every 2 seconds if disconnected
+            if not gamepad.connected:
+                now = time.monotonic()
+                if now - last_reconnect_time > 2.0:
+                    last_reconnect_time = now
+                    if gamepad.try_reconnect():
+                        state.controller_connected = True
+                        log.info("Controller connected!")
 
             gamepad.update()
 

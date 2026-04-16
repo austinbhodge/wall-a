@@ -2,9 +2,9 @@
 #include <ArduinoJson.h>
 #include <AFMotor.h>
 
-// Motor Shield v1 (L293D) — motors on M3 and M4
-AF_DCMotor motorLeft(3);
-AF_DCMotor motorRight(4);
+// Motor Shield v1 (L293D) — motors on M1 and M2
+AF_DCMotor motorLeft(1);
+AF_DCMotor motorRight(2);
 
 // Serial JSON buffer
 JsonDocument doc;
@@ -64,7 +64,7 @@ void setup() {
     // Announce ready
     doc.clear();
     doc["type"] = "status";
-    doc["message"] = "Wall-A firmware ready (Motor Shield v1, M3+M4)";
+    doc["message"] = "Wall-A firmware ready (Motor Shield v1, M1+M2)";
     serializeJson(doc, Serial);
     Serial.println();
 }
