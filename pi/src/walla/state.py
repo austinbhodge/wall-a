@@ -2,8 +2,11 @@
 
 import dataclasses
 import threading
+import time
 
 import numpy as np
+
+VALID_MODES = ("MANUAL", "AUTO", "WEB")
 
 
 @dataclasses.dataclass
@@ -18,13 +21,18 @@ class RobotState:
     # Latest camera frame
     frame: np.ndarray | None = dataclasses.field(default=None, repr=False)
 
-    # Control mode
+    # Control mode: MANUAL | AUTO | WEB
     mode: str = "MANUAL"
 
     # Connection status
     arduino_connected: bool = False
     camera_active: bool = False
     controller_connected: bool = False
+
+    # Web-driven motor intent (watchdog in main loop zeroes motors if stale)
+    web_drive_left: int = 0
+    web_drive_right: int = 0
+    web_drive_timestamp: float = 0.0
 
     _lock: threading.Lock = dataclasses.field(
         default_factory=threading.Lock, repr=False
@@ -47,9 +55,29 @@ class RobotState:
             self.camera_active = True
 
     def toggle_mode(self):
+        """Cycle MANUAL ↔ AUTO for gamepad toggle; WEB is set only via API."""
         with self._lock:
             self.mode = "AUTO" if self.mode == "MANUAL" else "MANUAL"
             return self.mode
+
+    def set_mode(self, mode: str) -> str:
+        if mode not in VALID_MODES:
+            raise ValueError(f"invalid mode: {mode}")
+        with self._lock:
+            self.mode = mode
+            # Leaving WEB resets the web drive intent.
+            if mode != "WEB":
+                self.web_drive_left = 0
+                self.web_drive_right = 0
+            return self.mode
+
+    def set_web_drive(self, left: int, right: int):
+        left = max(-255, min(255, int(left)))
+        right = max(-255, min(255, int(right)))
+        with self._lock:
+            self.web_drive_left = left
+            self.web_drive_right = right
+            self.web_drive_timestamp = time.monotonic()
 
     def snapshot(self) -> dict:
         """Return a copy of current state as a plain dict (no lock held)."""
@@ -65,4 +93,7 @@ class RobotState:
                 "arduino_connected": self.arduino_connected,
                 "camera_active": self.camera_active,
                 "controller_connected": self.controller_connected,
+                "web_drive_left": self.web_drive_left,
+                "web_drive_right": self.web_drive_right,
+                "web_drive_timestamp": self.web_drive_timestamp,
             }

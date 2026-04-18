@@ -18,6 +18,7 @@ from walla.controller.gamepad import (
 from walla.serial_bridge.bridge import SerialBridge
 from walla.state import RobotState
 from walla.threads import camera_loop, sensor_loop
+from walla.web import WebServer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,6 +28,9 @@ log = logging.getLogger("walla")
 
 TICK_RATE = 20  # Hz
 TICK_INTERVAL = 1.0 / TICK_RATE
+
+# If the web client hasn't sent a drive command within this window, cut motors.
+WEB_DRIVE_TIMEOUT = 0.5
 
 
 def main():
@@ -69,6 +73,10 @@ def main():
     )
     sensor_thread.start()
     camera_thread.start()
+
+    # Web dashboard — attaches a ring-buffer log handler, then serves on :8080
+    web = WebServer(state=state, bridge=bridge, navigator=navigator)
+    web.start()
 
     # Wait for first sensor data (only if the Arduino is actually present)
     if bridge.connected:
@@ -147,6 +155,16 @@ def main():
                 )
                 bridge.set_motors(left, right)
 
+            elif snap["mode"] == "WEB":
+                # Watchdog: if the browser has stopped sending drive updates,
+                # treat it as a dead-man switch and cut power.
+                ts = snap["web_drive_timestamp"]
+                age = time.monotonic() - ts if ts > 0 else float("inf")
+                if age > WEB_DRIVE_TIMEOUT:
+                    bridge.set_motors(0, 0)
+                else:
+                    bridge.set_motors(snap["web_drive_left"], snap["web_drive_right"])
+
             # Periodic status log
             now = time.monotonic()
             if now - last_status_time > 10.0:
@@ -175,6 +193,7 @@ def main():
         # Stop motors first!
         bridge.set_motors(0, 0)
         stop.set()
+        web.stop()
         gamepad.close()
         camera.close()
         bridge.close()
