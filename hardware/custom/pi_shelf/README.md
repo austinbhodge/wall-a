@@ -17,26 +17,31 @@ Everything is generated from one parametric source, [`pi_shelf.scad`](pi_shelf.s
 committed STLs are built for a generic slim Pi 5 ABS case; if yours differs by
 more than a couple of millimetres in X or Y, re-render before printing.
 
-| Parameter | Default | What to measure |
-|-----------|---------|-----------------|
-| `case_l` | 96 mm | Long axis — the two faces carrying the ports run along this |
-| `case_w` | 68 mm | Short axis |
-| `case_h` | 30 mm | Total height, rubber feet to lid |
-| `fit` | 0.6 mm | Clearance per side. Bump to 0.8 for an easier drop-in |
+| Parameter | Value | Status | What to measure |
+|-----------|-------|--------|-----------------|
+| `case_l` | 96 mm | **estimate** | Long axis — the two faces carrying the ports run along this |
+| `case_w` | 61.9 mm | measured | Short axis |
+| `case_h` | 30 mm | **estimate** | Total height, rubber feet to lid |
+| `fit` | 0.6 mm | — | Clearance per side. Bump to 0.8 for an easier drop-in |
 
 Measure over the *widest* point: lid overhang, feet, heatsink fins and all.
 Height is the forgiving one — the clamp has ±3 mm of travel built in, so
 anything within `case_h ± 3` works off the same print. Length and width are
 not forgiving; the tray is a pocket.
 
-Two dimensions deserve a second look:
+**`case_l` and `case_h` are still guesses — measure them before you print.**
+Height is the forgiving one; length is not.
+
+Two more dimensions deserve a second look:
 
 - **`curb_h` (4 mm)** — the side curbs. Both long faces of a Pi 5 carry ports
   (USB-A ×4 + Ethernet on one, USB-C + micro-HDMI on the other), so nothing may
   rise in front of them. The curbs stop well below the lowest port cutout on
   the case and locate it sideways; the yoke does the holding down. If your case
   has a cutout that starts lower than 4 mm off its base, drop this number.
-- **`tongue_w` (44 mm)** — the rear tongue. Only matters if you narrow the frame.
+- **`tongue_w_set` (0 = auto)** — the rear tongue auto-fits the rear cross
+  member that carries it, so it tracks `case_w` on its own. Set a number only
+  if you want to override it.
 
 ## How it holds the case
 
@@ -69,11 +74,12 @@ without removing anything.
 | Walls | 3 perimeters |
 | Infill | 30% |
 | Supports | **None needed** — both parts are support-free in the orientations below |
-| Footprint | base 111 × 99 mm, yoke 115 × 75 mm |
+| Footprint | base 111 × 93 mm, yoke 115 × 69 mm |
 
-On the A1 Mini, print `stl/base.stl` and `stl/yoke.stl` as **two separate
-jobs** — side by side they need ~185 mm in Y, which is more bed than it has.
-`stl/plate.stl` has both laid out together for anyone with a bigger printer.
+Both parts fit one A1 Mini plate: `stl/plate.stl` is 116 × 168 mm, about 6 mm
+of margin per side. If you end up with a longer case, that margin goes into the
+X axis first — check it against the bed before slicing, or print `base.stl` and
+`yoke.stl` as two jobs.
 
 PETG is worth it here: the towers and yoke legs are a screw-tensioned joint
 that a warm robot deck will creep under in PLA.

@@ -41,9 +41,9 @@ part = "assembly";  // "base" | "yoke" | "plate" | "assembly"
 // Take the measurement over the widest point, including lid overhang, rubber
 // feet and any heatsink fins.  Defaults are a generic slim Pi 5 ABS case.
 // ---------------------------------------------------------------------------
-case_l = 96;    // X — long axis (the two port faces run along this)
-case_w = 68;    // Y — short axis
-case_h = 30;    // Z — total height, feet to lid
+case_l = 96;    // X — long axis (the two port faces run along this)   [ESTIMATE]
+case_w = 61.9;  // Y — short axis                                      [measured]
+case_h = 30;    // Z — total height, feet to lid                       [ESTIMATE]
 fit    = 0.6;   // clearance per side; raise to 0.8 for a looser drop-in
 
 // ---------------------------------------------------------------------------
@@ -71,7 +71,7 @@ leg_gap   = 0.4;  // sliding clearance between leg and tower
 hole_dz   = 13;   // screw axis, below the yoke underside. Deep enough that the
                   // whole nut channel fits under a tower that is itself short
                   // enough to stay out of the yoke's way — see the asserts.
-tongue_w  = 44;   // rear tongue width
+tongue_w_set = 0; // rear tongue width; 0 = auto-fit to whatever the frame allows
 pad_d     = 0.8;  // recess under the rails for foam/silicone grip tape (0 = off)
 
 // ---------------------------------------------------------------------------
@@ -119,6 +119,10 @@ x_rear_base  = x_case_rear + rear_t0;   // ... and at the floor
 x_plate_rear = x_rear_base;             // the plate has to carry the taper
 
 y_out        = cav_w / 2 + wall;        // outer face of the side curbs
+
+// The tongue can only be as wide as the rear cross member that carries it, so
+// by default it tracks the case width instead of being pinned to one number.
+tongue_w = tongue_w_set > 0 ? tongue_w_set : cav_w - 2 * rail_w - 6;
 
 // Yoke frame extents, shared by the frame and the pads cut into it.
 x_yoke_rear  = x_case_rear + 1;         // where the frame stops and the tongue starts
