@@ -11,6 +11,20 @@
 | M3 Standoffs (30mm) | 8 | | |
 | 22mm Skateboard Bearings | 8 | 8mm bore, 7mm thick | |
 
+## Pi Shelf (clamp-on)
+
+Clamps the Pi 5 by its case rather than its board holes — see
+[`custom/pi_shelf/`](custom/pi_shelf/README.md).
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| Printed shelf base | 1 | `custom/pi_shelf/stl/base.stl` |
+| Printed clamp yoke | 1 | `custom/pi_shelf/stl/yoke.stl` |
+| M3 Screws (10mm) | 6 | 2 clamp + 4 deck mount |
+| M3 Nuts | 6 | 2 in the tower nut channels, 4 under the deck |
+| M3 Washers | 4 | deck mount, over the slotted ears |
+| M3 Standoffs (30mm) | 4 | Optional — clears the Arduino below |
+
 ## Electronics
 
 | Part | Qty | Notes |
