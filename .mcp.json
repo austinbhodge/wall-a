@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "freecad": {
+      "command": "C:\\Users\\austi\\AppData\\Roaming\\Python\\Python312\\Scripts\\freecad-mcp.exe",
+      "args": []
+    }
+  }
+}

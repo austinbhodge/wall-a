@@ -43,3 +43,13 @@ desktop.ini
 # Logs
 *.log
 logs/
+
+# Reference CAD models (big third-party meshes, kept local only)
+hardware/reference/
+
+# Regenerable CAD/sim artifacts (rebuild via hull.py / sim/simulate.py)
+hardware/custom/hull/preview/
+hardware/custom/hull/sim/proxies/
+hardware/custom/hull/sim/report.txt
+hardware/custom/hull/sim/manifest.json
+hardware/custom/hull/sim/wall_a.FCStd
