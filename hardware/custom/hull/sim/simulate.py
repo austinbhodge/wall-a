@@ -22,7 +22,7 @@ import sys
 import numpy as np
 import trimesh
 from build123d import (Box, BuildPart, BuildSketch, Compound, Cylinder,
-                       Locations, Mode, Plane, RegularPolygon, Align,
+                       Locations, Mode, Plane, RegularPolygon, Rot, Align,
                        extrude, import_step, export_stl, Location)
 
 HERE = Path(__file__).parent
@@ -185,6 +185,78 @@ for i, (bw, bl) in enumerate(H.PI_BOSSES):
     hex_c(f"pi_nut_{i}", cx, cy, plate_bot, plate_bot + 1.6, 4.0, 0,
           "fastener", (150, 150, 155), "nut in pi_shelf underside pocket")
 
+DRIVERS = []   # driver-access volumes; more appended per fastener below
+
+# ---------------------------------------------------------------- shell
+import shell as S  # noqa: E402  (builds shell STEP/STL on import)
+
+for sname, sstage in (("shell_sleeve", 5), ("shell_roof", 6)):
+    shp = import_step(str(HULL / "step" / f"{sname}.step"))
+    add(sname, shp.moved(T_CH), sstage, "printed", (200, 140, 40))
+
+def cyl_x(name, x0, x1, cy, cz, d, stage, cat, color, note=""):
+    with BuildPart() as bp:
+        with Locations((x0, cy, cz)):
+            with Locations(Rot(0, 90, 0)):
+                Cylinder(d / 2, x1 - x0,
+                         align=(Align.CENTER, Align.CENTER, Align.MIN))
+    add(name, bp.part, stage, cat, color, note)
+
+# shell side screws: horizontal M3x12 into the pi_shelf edge holes
+side_wall_out = S.INT_W / 2 + S.WALL
+for i, (ssx, ssl) in enumerate([(s, l) for s in (-1, 1)
+                                for l in S.SIDE_SCREWS_L]):
+    cy = ssl + 57.5
+    cz = S.SIDE_SCREW_Z - Z0
+    xw_out = ssx * side_wall_out - 61
+    xw_in = ssx * (S.INT_W / 2) - 61
+    x_edge = ssx * (H.PI_SHELF_W / 2) - 61
+    x_tip = ssx * (H.PI_SHELF_W / 2 - 8) - 61
+    lo, hi = sorted((xw_out, x_tip))
+    cyl_x(f"side_screw_{i}_shaft", lo, hi, cy, cz, 3.0, 5, "fastener",
+          (200, 200, 205))
+    hlo, hhi = sorted((xw_out, xw_out + ssx * 2.2))
+    cyl_x(f"side_screw_{i}_head", hlo, hhi, cy, cz, 5.7, 5, "fastener",
+          (200, 200, 205))
+    # horizontal driver, outward
+    dlo, dhi = sorted((xw_out + ssx * 2.2, xw_out + ssx * 62.2))
+    with BuildPart() as bp:
+        with Locations((dlo, cy, cz)):
+            with Locations(Rot(0, 90, 0)):
+                Cylinder(3.5, dhi - dlo,
+                         align=(Align.CENTER, Align.CENTER, Align.MIN))
+    DRIVERS.append(dict(name=f"driver[side_screw_{i},60]", solid=bp.part,
+                        stage=5, sev="FAIL",
+                        owner_prefix=f"side_screw_{i}"))
+
+# roof screws into the sleeve post cross-nuts (stage 6, driven from above)
+for i, (pcx, pcy) in enumerate(S.POST_CENTERS):
+    cx, cy = pcx - 61, pcy + 57.5
+    top = S.ROOF_Z + S.ROOF_T - Z0
+    screw(f"roof_screw_{i}", cx, cy, top, top + 2.2,
+          top - S.ROOF_T - 8.0, top, 6, +1)
+    slot_z = S.ROOF_Z - S.NUT_SLOT_BELOW - Z0
+    hex_c(f"sleeve_nut_{i}", cx, cy, slot_z - 1.2, slot_z + 1.2, 5.5, 5,
+          "fastener", (150, 150, 155), "nut in sleeve post cross-slot")
+
+# plug keep-outs: a plug must reach every port through its shell window
+box_c("KEEPOUT_pi_plugs", -61, 109.0, 110.0, 128.0, 52.0, 26.0, 9,
+      "keepout", (220, 60, 60), "USB-A/Eth plug bodies through the window")
+box_c("KEEPOUT_uno_usb_plug", -79.7, 108.0, 54.0, 68.0, 8.0, 24.0, 9,
+      "keepout", (220, 60, 60))
+box_c("KEEPOUT_usbc_plug", -5.0, 27.5, 104.0, 112.0, 24.0, 36.0, 9,
+      "keepout", (220, 60, 60), "USB-C/HDMI plugs through the +x window")
+# camera sightline: forward from the lens center
+cam_y0 = (S.INT_L1 + S.WALL) + 57.5
+cam_z = S.ROOF_Z + S.ROOF_T + S.EYE_Z - Z0
+with BuildPart() as bp:
+    with Locations((-61 + S.EYE_SPACING / 2, cam_y0, cam_z)):
+        with Locations(Rot(-90, 0, 0)):
+            Cylinder(7.0, 40.0, align=(Align.CENTER, Align.CENTER,
+                                       Align.MIN))
+add("KEEPOUT_camera_sight", bp.part, 9, "keepout", (220, 60, 60),
+    "clear view forward of the lens")
+
 # wire-tunnel keep-out (must stay empty): the header field of the shield
 # (±26.5) over the full board length, the user's 28.5mm plug-in height
 box_c("KEEPOUT_wire_tunnel", ux, uy, ub_z + H.UNO_STACK_H,
@@ -192,7 +264,6 @@ box_c("KEEPOUT_wire_tunnel", ux, uy, ub_z + H.UNO_STACK_H,
       "28.5mm jumper access over the shield headers")
 
 # staged driver volumes (Ø7 shaft; 25 = stubby/L-key FAIL, 80 = straight)
-DRIVERS = []
 for name, cx, cy, hz0, hz1, ddir, stage in FASTENERS:
     if stage == 0:
         continue  # bench-assembled
@@ -225,6 +296,8 @@ for i in range(4):
     WHITELIST.add((f"pi_seat_screw_{i}_shaft", f"tower_nut_{i}"))
     WHITELIST.add((f"uno_screw_{i}_shaft", f"standoff_nut_{i}"))
     WHITELIST.add((f"standoff_stud_{i}", f"standoff_nut_{i}"))
+    WHITELIST.add((f"side_screw_{i}_shaft", "pi_shelf"))
+    WHITELIST.add((f"roof_screw_{i}_shaft", f"sleeve_nut_{i}"))
 
 def pair_ok(a, b):
     return (a, b) in WHITELIST or (b, a) in WHITELIST

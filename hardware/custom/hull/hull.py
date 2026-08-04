@@ -308,6 +308,13 @@ with BuildPart() as pi_shelf:
             Cylinder(HOLE_D / 2, PLATE_T,
                      align=(Align.CENTER, Align.CENTER, Align.MIN),
                      mode=Mode.SUBTRACT)
+    # horizontal edge holes for the body shell's side screws (shell.py):
+    # Ø2.7 in the plate edge, M3 self-taps in-plane — cosmetic-load only
+    for sx in (-1, 1):
+        for sl in (-40.0, 20.0):
+            with Locations((sx * (PI_SHELF_W / 2 - 4), sl, PLATE_T / 2)):
+                with Locations(Rot(0, 90, 0)):
+                    Cylinder(2.7 / 2, 8.0, mode=Mode.SUBTRACT)
     # underside hex pockets so the Pi's M2 nuts sit flush — the motor pack
     # is only 1.0 below the plate (sim caught the nuts hitting it)
     for hw, hl in PI_BOSSES:
