@@ -181,6 +181,53 @@ Wall-A monitors ambient audio levels. When cat vocalizations exceed a threshold,
 - Navigation toward the cat
 - In-character TTS response
 
+## Hardware Build State — READ FIRST (updated 2026-08-04)
+
+Everything below in this section is CURRENT and supersedes older plans in
+this file. The custom hardware lives in `hardware/custom/hull/` as
+**parametric build123d Python** (never hand-edit STLs; edit constants and
+re-run). Full details: `hardware/custom/hull/README.md` + `sim/README.md`.
+
+**Architecture (v0.5 shelves + v0.6 shell, all committed & sim-verified):**
+open-air stack using the MR6's own shelf system — `uno_shelf` (middle
+rails, Uno + OSEPP shield, ports FORWARD) → stock 30mm standoffs →
+2× `batt_bracket` + `batt_deck` bridge (28.5mm wire tunnel over the
+shield; BOTH battery packs stacked on the deck) → `pi_shelf` (Pi 5, ports
+forward) → `shell_sleeve` + `shell_roof` (Wall-E head, standard Camera
+Module 3 in the left eye). Robot top: chassis z 166.5.
+
+**Iron rules learned the hard way:**
+1. `python sim/simulate.py` MUST report **0 FAIL** before anything is
+   printed or committed. It models every solid incl. fasteners, driver
+   access (staged by assembly order), and keep-outs. 2 known WARNs
+   (front deck bolts want a stubby driver) are accepted.
+2. Measured values beat datasheets and guesses; user measures with
+   calipers on request. Key measured constants in `hull.py`:
+   Uno+shield stack 23.5 · wire tunnel 28.5 · packs 65.4×117.4×7.2 and
+   71.7×135×15.8. Reference STLs live in `hardware/reference/`
+   (gitignored) — the fit checks align real meshes to bosses.
+3. All fastening is through-bolts + nuts from the user's M2–M5
+   button-head kit (M2+washer for the Pi). No self-tapping, no
+   countersunk purchases; flush nuts sit in hex pockets/cross-slots.
+4. PETG, every part prints flat, no supports. Print `batt_bracket`
+   twice, the second MIRRORED in the slicer.
+5. FreeCAD 1.1 (`C:\Program Files\FreeCAD 1.1`): headless python at
+   `bin\python.exe` runs `sim/build_fcstd.py` → `sim/wall_a.FCStd`
+   (full 116-object assembly). The **freecad MCP** (repo `.mcp.json`)
+   talks to the GUI addon (`%APPDATA%\FreeCAD\v1-1\Mod\FreeCADMCP` —
+   note the VERSIONED dir) once the user starts "MCP Addon" workbench →
+   Start RPC Server (port 9875).
+6. MR6 chassis facts (measured from the STLs in
+   `C:\Users\austi\Documents\3dModels\MR6 - Mini Prototyping Tank Robot
+   - 2753227\files`, shared assembly frame): middle-rail top chassis
+   z 18.5, standoff holes (x −94.5/−27.5, y 27.5/56.9), 60.0mm clear
+   between mounts, mount tops z 45.1. Hull frame → chassis:
+   (w−61, l+57.5, z−5.1).
+
+**Next up:** print queue (uno_shelf → brackets → deck → pi_shelf →
+sleeve → roof), then assembly/wiring checklist and software bring-up
+(Pi↔Arduino serial, motor test).
+
 ## 3D Printed Parts
 
 ### Philosophy on Source Control for Physical Parts

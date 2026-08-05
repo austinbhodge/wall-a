@@ -36,7 +36,8 @@ colored; the wire tunnel is the translucent red box.
 One-time setup, already installed:
 - pip package `freecad-mcp` (the MCP server, wired in `../../../.mcp.json`
   at the repo root — Claude Code picks it up automatically in this repo)
-- the `FreeCADMCP` addon in `%APPDATA%\FreeCAD\Mod`
+- the `FreeCADMCP` addon in `%APPDATA%\FreeCAD\v1-1\Mod` (note: FreeCAD
+  1.x reads the **versioned** user dir, not the old `FreeCAD\Mod`)
 
 To use it: open FreeCAD → select the **MCP Addon** workbench →
 **Start RPC Server** (localhost:9875) → start a Claude Code session in
